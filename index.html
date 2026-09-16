@@ -1,3 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Green Bandits Bazaar</title>
+<style>
+  :root {
+    --osrs-yellow: #ff981f;
+    --osrs-green: #37bf37;
+    --osrs-bg: #2b2419;
+    --osrs-panel: #3a2f20;
+    --osrs-border: #1f1912;
+    --osrs-inner-border: #63533e;
+  }
+
+  body {
+    background-color: #0e0a07;
+    color: #e3dac9;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  /* Main Shop Frame */
+  .bazaar-frame {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    min-height: 540px;
+    border: 5px solid var(--osrs-border);
+    outline: 3px solid var(--osrs-inner-border);
+    box-shadow: 0 0 35px rgba(0,0,0,0.9);
+    background-color: #1a1510;
+    background-image: url('bazaar_bg.jpg');
+    background-size: cover;
+    background-position: center 25%;
+    background-repeat: no-repeat;
+    image-rendering: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  /* Clean Host Lock Button */
+  .host-lock-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #251d14;
+    border: 2px solid var(--osrs-inner-border);
+    color: #bfae91;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 3px;
+    z-index: 5;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .host-lock-btn:hover {
+    border-color: var(--osrs-yellow);
+    color: #fff;
+    background: #382c1e;
+  }
+
+  /* Top Wanted Banner */
+  .wanted-banner {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(38, 31, 22, 0.94);
+    border: 3px solid var(--osrs-border);
+    outline: 2px solid var(--osrs-inner-border);
+    padding: 8px 24px;
+    text-align: center;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    z-index: 1;
+  }
+
+  .wanted-banner h1 {
+    color: var(--osrs-green);
+    font-size: 1.4rem;
+    margin: 0;
+    text-shadow: 2px 2px #000;
+    letter-spacing: 1px;
+  }
+
+  .wanted-banner p {
+    color: var(--osrs-yellow);
+    margin: 2px 0 0 0;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+
+  /* Shop Counter Shelf */
+  .shop-counter {
+    background: linear-gradient(180deg, rgba(35, 27, 18, 0.94) 0%, rgba(14, 11, 7, 0.98) 100%);
+    border-top: 4px solid var(--osrs-inner-border);
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    z-index: 2;
+  }
+
+  /* Item Card */
+  .item-card {
+    background: var(--osrs-panel);
+    border: 2px solid var(--osrs-inner-border);
+    border-radius: 4px;
+    padding: 8px 6px;
+    position: relative;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  .item-card:hover:not(.sold):not(.pending) {
+    transform: translateY(-4px);
+    border-color: var(--osrs-yellow);
+    background: #4d3f2c;
+  }
+
+  .item-icon {
+    width: 42px;
+    height: 42px;
+    image-rendering: pixelated;
+    display: block;
+    margin: 0 auto 4px;
+  }
+
+  .item-title {
+    font-weight: bold;
+    font-size: 0.82rem;
+    color: #fff;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .price-line {
+    font-size: 0.72rem;
+    color: #aaa;
+  }
+
+  .bazaar-price {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--osrs-green);
+  }
+
+  .action-tag {
+    margin-top: 6px;
+    background: #1c521c;
+    border: 1px solid #37bf37;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 3px;
+    border-radius: 2px;
+    color: #fff;
+  }
+
+  /* PENDING STATE */
+  .item-card.pending {
+    border-color: var(--osrs-yellow);
+    background: #362817;
+  }
+  .item-card.pending .action-tag {
+    background: #7a5813;
+    border-color: var(--osrs-yellow);
+    color: #fff;
+  }
+
+  /* COBWEB EFFECT WHEN SOLD */
+  .item-card.sold {
+    cursor: not-allowed;
+    background: #16120d !important;
+    border-color: #2b2318 !important;
+  }
+
+  .item-card.sold .item-icon,
+  .item-card.sold .item-title,
+  .item-card.sold .price-line,
+  .item-card.sold .bazaar-price,
+  .item-card.sold .action-tag {
+    opacity: 0.15;
+    filter: grayscale(100%);
+  }
+
+  .cobweb-layer {
+    display: none;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .item-card.sold .cobweb-layer {
+    display: block;
+  }
+
+  .cobweb-svg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0.85;
+  }
+
+  .sold-stamp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    color: #bfae91;
+    font-weight: bold;
+    font-size: 0.75rem;
+    text-shadow: 1px 1px 2px #000;
+    background: rgba(18, 14, 10, 0.9);
+    padding: 4px 6px;
+    border: 1px dashed #7a6e57;
+    white-space: nowrap;
+    z-index: 3;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+
+  .modal-box {
+    background: var(--osrs-bg);
+    border: 4px solid var(--osrs-border);
+    outline: 2px solid var(--osrs-inner-border);
+    width: 90%;
+    max-width: 440px;
+    padding: 16px;
+    position: relative;
+    box-shadow: 0 0 25px #000;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 6px; right: 10px;
+    background: none;
+    border: none;
+    color: #ff4444;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .item-info-panel {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--osrs-inner-border);
+    padding: 8px;
+    margin: 10px 0;
+    font-size: 0.82rem;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    margin-bottom: 4px;
+    color: var(--osrs-yellow);
+    font-size: 0.8rem;
+  }
+
+  input[type="text"], input[type="file"] {
+    background: #140f09;
+    border: 1px solid var(--osrs-inner-border);
+    color: #fff;
+    padding: 6px;
+    font-family: inherit;
+    font-size: 0.8rem;
+  }
+
+  .confirm-btn {
+    background: #1e5a1e;
+    color: #fff;
+    border: 2px solid #37bf37;
+    padding: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 5px;
+  }
+  .confirm-btn:hover { background: #2b7d2b; }
+
+  .status-text {
+    font-size: 0.8rem;
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* Host Dashboard Table */
+  .host-list {
+    margin-top: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .host-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--osrs-inner-border);
+    font-size: 0.8rem;
+  }
+  .btn-sm {
+    padding: 3px 7px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    border: 1px solid;
+    margin-left: 4px;
+  }
+  .btn-verify { background: #1c521c; border-color: #37bf37; color: #fff; }
+  .btn-reopen { background: #4a2818; border-color: #ff981f; color: #fff; }
+  .btn-reset-all {
+    background: #5a1e1e;
+    border-color: #ff4444;
+    color: #fff;
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="bazaar-frame" id="bazaarFrame">
+  <button class="host-lock-btn" onclick="openHostModal()">🔒 Host Tools</button>
+
+  <div class="wanted-banner">
+    <h1>GREEN BANDITS BAZAAR</h1>
+    <p>WANTED ITEMS! (+20% BONUS PAYOUT)</p>
+  </div>
+
+  <div class="shop-counter" id="shopGrid">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Submission Modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal-box">
+      <button class="close-btn" onclick="closeModals()">&times;</button>
+      
+      <div style="text-align: center;">
+        <img id="mIcon" class="item-icon" src="" alt="">
+        <strong id="mName" style="color: var(--osrs-yellow); font-size: 1rem;"></strong>
+      </div>
+
+      <div class="item-info-panel">
+        <div><strong>Acquisition:</strong> <span id="mHowTo"></span></div>
+        <div style="margin-top: 4px;"><strong>Base Price:</strong> <span id="mBase"></span> gp</div>
+        <div><strong>Bazaar Payout:</strong> <span id="mPayout" style="color: var(--osrs-green); font-weight: bold;"></span> gp</div>
+      </div>
+
+      <form id="submitForm" onsubmit="handleSubmit(event)">
+        <div class="form-group">
+          <label for="rsn">RuneScape Name:</label>
+          <input type="text" id="rsn" placeholder="e.g., Zezima" required>
+        </div>
+
+        <div class="form-group">
+          <label for="proof">Upload Drop Screenshot:</label>
+          <input type="file" id="proof" accept="image/*" required>
+        </div>
+
+        <button type="submit" class="confirm-btn" id="submitBtn">SUBMIT PROOF FOR VERIFICATION</button>
+        <div id="statusMsg" class="status-text"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Host Management Modal -->
+  <div class="modal-overlay" id="hostModal">
+    <div class="modal-box">
+      <button class="close-btn" onclick="closeModals()">&times;</button>
+      <h3 style="color: var(--osrs-yellow); margin-top: 0; text-align: center;">Clan Host Dashboard</h3>
+      <div style="font-size: 0.78rem; color: #aaa; text-align: center; margin-bottom: 8px;">
+        Review screenshots in Discord, then verify claims below:
+      </div>
+
+      <div class="host-list" id="hostItemsList">
+        <!-- Populated by JS -->
+      </div>
+
+      <button class="btn-reset-all" onclick="resetAllItems()">🔄 Reset All Items (New Week)</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const HOST_PASSWORD = "greenbandits";
   const DISCORD_PROXY_URL = "https://bazaar-proxy.jamie-adams1993.workers.dev"; 
@@ -36,40 +461,10 @@
   let activeItem = null;
   let globalStatuses = {};
 
-  // Fetch shared state live from Cloudflare KV
-  async function loadGlobalStatus() {
-    try {
-      const res = await fetch(`${DISCORD_PROXY_URL}/api/status`);
-      if (res.ok) {
-        globalStatuses = await res.json();
-      }
-    } catch (e) {
-      console.warn("Could not load global status, falling back to local.");
-    }
-    renderBazaar();
-  }
-
-  // Sync an update to Cloudflare KV
-  async function syncStatusUpdate(itemId, status, resetAll = false) {
-    try {
-      await fetch(`${DISCORD_PROXY_URL}/api/update-status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          password: HOST_PASSWORD,
-          itemId: itemId,
-          status: status,
-          resetAll: resetAll
-        })
-      });
-      await loadGlobalStatus();
-    } catch (e) {
-      alert("Failed to sync change to server.");
-    }
-  }
-
+  // Render items immediately so page is never blank
   function renderBazaar() {
     const grid = document.getElementById("shopGrid");
+    if (!grid) return;
     grid.innerHTML = "";
 
     weeklyItems.forEach(item => {
@@ -82,7 +477,7 @@
       if (status === "available") {
         card.onclick = () => openSubmitModal(item);
       } else if (status === "pending") {
-        card.onclick = () => alert(`${item.name} has a submission pending clan verification!`);
+        card.onclick = () => alert(`${item.name} has a submission pending clan verification in Discord!`);
       }
 
       let badgeText = "UPLOAD PROOF";
@@ -113,6 +508,36 @@
       `;
       grid.appendChild(card);
     });
+  }
+
+  async function loadGlobalStatus() {
+    try {
+      const res = await fetch(`${DISCORD_PROXY_URL}/api/status`);
+      if (res.ok) {
+        globalStatuses = await res.json();
+      }
+    } catch (e) {
+      console.warn("Could not load global status from server.");
+    }
+    renderBazaar();
+  }
+
+  async function syncStatusUpdate(itemId, status, resetAll = false) {
+    try {
+      await fetch(`${DISCORD_PROXY_URL}/api/update-status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          password: HOST_PASSWORD,
+          itemId: itemId,
+          status: status,
+          resetAll: resetAll
+        })
+      });
+      await loadGlobalStatus();
+    } catch (e) {
+      alert("Failed to sync change to server.");
+    }
   }
 
   function openSubmitModal(item) {
@@ -231,7 +656,6 @@
       statusMsg.style.color = "#37bf37";
       statusMsg.textContent = "Proof submitted! Awaiting clan verification.";
 
-      // Reload global state so it flips to PENDING for everyone
       await loadGlobalStatus();
 
       setTimeout(() => {
@@ -246,6 +670,9 @@
     }
   }
 
-  // Load the shared global state as soon as anyone opens the site
+  // Initial immediate render, then background sync
+  renderBazaar();
   loadGlobalStatus();
 </script>
+</body>
+</html>
