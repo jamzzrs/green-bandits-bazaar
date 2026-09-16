@@ -41,7 +41,7 @@
     background-color: #1a1510;
     background-image: url('bazaar_bg.jpg');
     background-size: cover;
-    background-position: center 25%;
+    background-position: center 20%;
     background-repeat: no-repeat;
     image-rendering: auto;
     overflow: hidden;
@@ -50,15 +50,15 @@
     justify-content: flex-end;
   }
 
-  /* Host Lock Button */
+  /* Host Lock Button (Top Right) */
   .host-lock-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 15px;
+    right: 15px;
     background: #251d14;
     border: 2px solid var(--osrs-inner-border);
     color: #bfae91;
-    padding: 5px 10px;
+    padding: 6px 12px;
     font-size: 0.75rem;
     font-family: inherit;
     font-weight: bold;
@@ -74,25 +74,24 @@
     background: #382c1e;
   }
 
-  /* Top Wanted Banner */
+  /* Top-Left Docked Banner */
   .wanted-banner {
     position: absolute;
     top: 15px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 15px;
     background: rgba(38, 31, 22, 0.94);
     border: 3px solid var(--osrs-border);
     outline: 2px solid var(--osrs-inner-border);
-    padding: 8px 24px;
-    text-align: center;
+    padding: 8px 16px;
+    text-align: left;
     border-radius: 4px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-    z-index: 1;
+    z-index: 2;
   }
 
   .wanted-banner h1 {
     color: var(--osrs-green);
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     margin: 0;
     text-shadow: 2px 2px #000;
     letter-spacing: 1px;
@@ -101,7 +100,7 @@
   .wanted-banner p {
     color: var(--osrs-yellow);
     margin: 2px 0 4px 0;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: bold;
   }
 
@@ -110,17 +109,17 @@
     display: inline-block;
     background: #19130d;
     border: 1px solid var(--osrs-inner-border);
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 3px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #bbb;
-    margin-top: 3px;
+    margin-top: 2px;
   }
 
   .code-badge strong {
     color: #00ff88;
     letter-spacing: 1px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   /* Shop Counter Shelf */
@@ -396,8 +395,7 @@
 <body>
 
 <div class="bazaar-frame" id="bazaarFrame">
-  <button class="host-lock-btn" onclick="openHostModal()">🔒 Host Tools</button>
-
+  <!-- Title & Codeword Docked to Top-Left -->
   <div class="wanted-banner">
     <h1>GREEN BANDITS BAZAAR</h1>
     <p>WANTED ITEMS! (+20% BONUS PAYOUT)</p>
@@ -406,6 +404,9 @@
       📸 CHAT CODEWORD: <strong id="bannerCodeword">BANDIT</strong>
     </div>
   </div>
+
+  <!-- Host Button Docked to Top-Right -->
+  <button class="host-lock-btn" onclick="openHostModal()">🔒 Host Tools</button>
 
   <div class="shop-counter" id="shopGrid">
     <!-- Populated by JS -->
