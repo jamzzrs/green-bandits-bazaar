@@ -461,7 +461,6 @@
   let activeItem = null;
   let globalStatuses = {};
 
-  // Render items immediately so page is never blank
   function renderBazaar() {
     const grid = document.getElementById("shopGrid");
     if (!grid) return;
@@ -670,9 +669,12 @@
     }
   }
 
-  // Initial immediate render, then background sync
+  // Initial immediate render and fetch
   renderBazaar();
   loadGlobalStatus();
+
+  // Auto-refresh the board every 15 seconds for anyone who has the tab open
+  setInterval(loadGlobalStatus, 15000);
 </script>
 </body>
 </html>
