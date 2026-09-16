@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Green Bandits Bazaar</title>
+<style>
+  :root {
+    --osrs-yellow: #ff981f;
+    --osrs-green: #37bf37;
+    --osrs-bg: #2b2419;
+    --osrs-panel: #3a2f20;
+    --osrs-border: #1f1912;
+    --osrs-inner-border: #63533e;
+  }
+
+  body {
+    background-color: #0e0a07;
+    color: #e3dac9;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  /* Main Shop Container */
+  .bazaar-frame {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    min-height: 540px;
+    border: 5px solid var(--osrs-border);
+    outline: 3px solid var(--osrs-inner-border);
+    box-shadow: 0 0 35px rgba(0,0,0,0.9);
+    background-color: #1a1510;
+    background-image: url('bazaar_bg.jpg');
+    background-size: cover;
+    background-position: center 25%;
+    background-repeat: no-repeat;
+    image-rendering: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  /* Clean Host Lock Button in Corner */
+  .host-lock-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #251d14;
+    border: 2px solid var(--osrs-inner-border);
+    color: #bfae91;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 3px;
+    z-index: 5;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .host-lock-btn:hover {
+    border-color: var(--osrs-yellow);
+    color: #fff;
+    background: #382c1e;
+  }
+
+  /* Top Wanted Banner */
+  .wanted-banner {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(38, 31, 22, 0.94);
+    border: 3px solid var(--osrs-border);
+    outline: 2px solid var(--osrs-inner-border);
+    padding: 8px 24px;
+    text-align: center;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    z-index: 1;
+  }
+
+  .wanted-banner h1 {
+    color: var(--osrs-green);
+    font-size: 1.4rem;
+    margin: 0;
+    text-shadow: 2px 2px #000;
+    letter-spacing: 1px;
+  }
+
+  .wanted-banner p {
+    color: var(--osrs-yellow);
+    margin: 2px 0 0 0;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+
+  /* Shop Counter Shelf */
+  .shop-counter {
+    background: linear-gradient(180deg, rgba(35, 27, 18, 0.94) 0%, rgba(14, 11, 7, 0.98) 100%);
+    border-top: 4px solid var(--osrs-inner-border);
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    z-index: 2;
+  }
+
+  /* Item Card */
+  .item-card {
+    background: var(--osrs-panel);
+    border: 2px solid var(--osrs-inner-border);
+    border-radius: 4px;
+    padding: 8px 6px;
+    position: relative;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  .item-card:hover:not(.sold):not(.pending) {
+    transform: translateY(-4px);
+    border-color: var(--osrs-yellow);
+    background: #4d3f2c;
+  }
+
+  .item-icon {
+    width: 42px;
+    height: 42px;
+    image-rendering: pixelated;
+    display: block;
+    margin: 0 auto 4px;
+  }
+
+  .item-title {
+    font-weight: bold;
+    font-size: 0.82rem;
+    color: #fff;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .price-line {
+    font-size: 0.72rem;
+    color: #aaa;
+  }
+
+  .bazaar-price {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--osrs-green);
+  }
+
+  .action-tag {
+    margin-top: 6px;
+    background: #1c521c;
+    border: 1px solid #37bf37;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 3px;
+    border-radius: 2px;
+    color: #fff;
+  }
+
+  /* PENDING VERIFICATION STATE */
+  .item-card.pending {
+    border-color: var(--osrs-yellow);
+    background: #362817;
+  }
+  .item-card.pending .action-tag {
+    background: #7a5813;
+    border-color: var(--osrs-yellow);
+    color: #fff;
+  }
+
+  /* COBWEB EFFECT WHEN SOLD */
+  .item-card.sold {
+    cursor: not-allowed;
+    background: #16120d !important;
+    border-color: #2b2318 !important;
+  }
+
+  .item-card.sold .item-icon,
+  .item-card.sold .item-title,
+  .item-card.sold .price-line,
+  .item-card.sold .bazaar-price,
+  .item-card.sold .action-tag {
+    opacity: 0.15;
+    filter: grayscale(100%);
+  }
+
+  .cobweb-layer {
+    display: none;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .item-card.sold .cobweb-layer {
+    display: block;
+  }
+
+  .cobweb-svg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0.85;
+  }
+
+  .sold-stamp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    color: #bfae91;
+    font-weight: bold;
+    font-size: 0.75rem;
+    text-shadow: 1px 1px 2px #000;
+    background: rgba(18, 14, 10, 0.9);
+    padding: 4px 6px;
+    border: 1px dashed #7a6e57;
+    white-space: nowrap;
+    z-index: 3;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+
+  .modal-box {
+    background: var(--osrs-bg);
+    border: 4px solid var(--osrs-border);
+    outline: 2px solid var(--osrs-inner-border);
+    width: 90%;
+    max-width: 440px;
+    padding: 16px;
+    position: relative;
+    box-shadow: 0 0 25px #000;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 6px; right: 10px;
+    background: none;
+    border: none;
+    color: #ff4444;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .item-info-panel {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--osrs-inner-border);
+    padding: 8px;
+    margin: 10px 0;
+    font-size: 0.82rem;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    margin-bottom: 4px;
+    color: var(--osrs-yellow);
+    font-size: 0.8rem;
+  }
+
+  input[type="text"], input[type="file"] {
+    background: #140f09;
+    border: 1px solid var(--osrs-inner-border);
+    color: #fff;
+    padding: 6px;
+    font-family: inherit;
+    font-size: 0.8rem;
+  }
+
+  .confirm-btn {
+    background: #1e5a1e;
+    color: #fff;
+    border: 2px solid #37bf37;
+    padding: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 5px;
+  }
+  .confirm-btn:hover { background: #2b7d2b; }
+
+  .status-text {
+    font-size: 0.8rem;
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* Host Dashboard Table */
+  .host-list {
+    margin-top: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .host-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--osrs-inner-border);
+    font-size: 0.8rem;
+  }
+  .btn-sm {
+    padding: 3px 7px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    border: 1px solid;
+    margin-left: 4px;
+  }
+  .btn-verify { background: #1c521c; border-color: #37bf37; color: #fff; }
+  .btn-reopen { background: #4a2818; border-color: #ff981f; color: #fff; }
+  .btn-reset-all {
+    background: #5a1e1e;
+    border-color: #ff4444;
+    color: #fff;
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="bazaar-frame" id="bazaarFrame">
+  <!-- Clean Host Lock Button -->
+  <button class="host-lock-btn" onclick="openHostModal()">🔒 Host Tools</button>
+
+  <div class="wanted-banner">
+    <h1>GREEN BANDITS BAZAAR</h1>
+    <p>WANTED ITEMS! (+20% BONUS PAYOUT)</p>
+  </div>
+
+  <!-- Items Shelf -->
+  <div class="shop-counter" id="shopGrid">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Submission Modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal-box">
+      <button class="close-btn" onclick="closeModals()">&times;</button>
+      
+      <div style="text-align: center;">
+        <img id="mIcon" class="item-icon" src="" alt="">
+        <strong id="mName" style="color: var(--osrs-yellow); font-size: 1rem;"></strong>
+      </div>
+
+      <div class="item-info-panel">
+        <div><strong>Acquisition:</strong> <span id="mHowTo"></span></div>
+        <div style="margin-top: 4px;"><strong>Base Price:</strong> <span id="mBase"></span> gp</div>
+        <div><strong>Bazaar Payout:</strong> <span id="mPayout" style="color: var(--osrs-green); font-weight: bold;"></span> gp</div>
+      </div>
+
+      <form id="submitForm" onsubmit="handleSubmit(event)">
+        <div class="form-group">
+          <label for="rsn">RuneScape Name:</label>
+          <input type="text" id="rsn" placeholder="e.g., Zezima" required>
+        </div>
+
+        <div class="form-group">
+          <label for="proof">Upload Drop Screenshot:</label>
+          <input type="file" id="proof" accept="image/*" required>
+        </div>
+
+        <button type="submit" class="confirm-btn" id="submitBtn">SUBMIT PROOF FOR VERIFICATION</button>
+        <div id="statusMsg" class="status-text"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Host Management Modal -->
+  <div class="modal-overlay" id="hostModal">
+    <div class="modal-box">
+      <button class="close-btn" onclick="closeModals()">&times;</button>
+      <h3 style="color: var(--osrs-yellow); margin-top: 0; text-align: center;">Clan Host Dashboard</h3>
+      <div style="font-size: 0.78rem; color: #aaa; text-align: center; margin-bottom: 8px;">
+        Review screenshots in Discord, then verify claims below:
+      </div>
+
+      <div class="host-list" id="hostItemsList">
+        <!-- Populated by JS -->
+      </div>
+
+      <button class="btn-reset-all" onclick="resetAllItems()">🔄 Reset All Items (New Week)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ==========================================
+  // CONFIGURATION
+  // ==========================================
+  const HOST_PASSWORD = "greenbandits";
+  
+  // Your Cloudflare Worker proxy domain:
+  const DISCORD_PROXY_URL = "https://bazaar-proxy.jamie-adams1993.workers.dev"; 
+
+  const weeklyItems = [
+    {
+      id: "ranger_boots",
+      name: "Ranger Boots",
+      basePrice: 32000000,
+      howToGet: "Medium Clue Scroll Reward.",
+      icon: "https://oldschool.runescape.wiki/images/Ranger_boots_detail.png"
+    },
+    {
+      id: "dragon_pickaxe",
+      name: "Dragon Pickaxe",
+      basePrice: 1300000,
+      howToGet: "Wildy bosses (Vet'ion, Callisto, Venenatis) or KBD.",
+      icon: "https://oldschool.runescape.wiki/images/Dragon_pickaxe_detail.png"
+    },
+    {
+      id: "uncut_onyx",
+      name: "Uncut Onyx",
+      basePrice: 2800000,
+      howToGet: "TzHaar gem shop (300k TokKul) or Zulrah drop.",
+      icon: "https://oldschool.runescape.wiki/images/Uncut_onyx_detail.png"
+    },
+    {
+      id: "grimy_ranarr",
+      name: "Ranarr Weed x100",
+      basePrice: 650000,
+      howToGet: "Herb patches, Aberrant Spectres, or Wyverns.",
+      icon: "https://oldschool.runescape.wiki/images/Grimy_ranarr_weed_detail.png"
+    }
+  ];
+
+  let activeItem = null;
+
+  function getItemStatuses() {
+    return JSON.parse(localStorage.getItem('bazaar_item_status') || '{}');
+  }
+
+  function setItemStatus(id, status) {
+    const statuses = getItemStatuses();
+    if (status) {
+      statuses[id] = status;
+    } else {
+      delete statuses[id];
+    }
+    localStorage.setItem('bazaar_item_status', JSON.stringify(statuses));
+    renderBazaar();
+  }
+
+  function renderBazaar() {
+    const grid = document.getElementById("shopGrid");
+    const statuses = getItemStatuses();
+    grid.innerHTML = "";
+
+    weeklyItems.forEach(item => {
+      const status = statuses[item.id] || "available";
+      const bonusPrice = Math.round(item.basePrice * 1.20);
+
+      const card = document.createElement("div");
+      card.className = `item-card ${status}`;
+      
+      if (status === "available") {
+        card.onclick = () => openSubmitModal(item);
+      } else if (status === "pending") {
+        card.onclick = () => alert(`${item.name} currently has a submission pending clan staff review in Discord!`);
+      }
+
+      let badgeText = "UPLOAD PROOF";
+      if (status === "pending") badgeText = "PENDING REVIEW";
+      if (status === "sold") badgeText = "OUT OF STOCK";
+
+      card.innerHTML = `
+        <div class="cobweb-layer">
+          <svg class="cobweb-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M0,0 Q35,10 50,50 Q10,35 0,0" stroke="#ccc" stroke-width="0.7" fill="none"/>
+            <path d="M0,0 Q50,20 85,85 Q20,50 0,0" stroke="#aaa" stroke-width="0.7" fill="none"/>
+            <path d="M100,0 Q65,10 50,50 Q90,35 100,0" stroke="#ccc" stroke-width="0.7" fill="none"/>
+            <path d="M100,0 Q50,20 15,85 Q80,50 100,0" stroke="#aaa" stroke-width="0.7" fill="none"/>
+            <path d="M15,0 Q25,25 0,30 M30,0 Q40,40 0,45" stroke="#999" stroke-width="0.5" fill="none"/>
+            <path d="M85,0 Q75,25 100,30 M70,0 Q60,40 100,45" stroke="#999" stroke-width="0.5" fill="none"/>
+            <path d="M0,100 Q40,60 50,50 M100,100 Q60,60 50,50" stroke="#888" stroke-width="0.6" fill="none"/>
+            <line x1="0" y1="0" x2="100" y2="100" stroke="#bbb" stroke-width="0.4" stroke-dasharray="2,2"/>
+            <line x1="100" y1="0" x2="0" y2="100" stroke="#bbb" stroke-width="0.4" stroke-dasharray="2,2"/>
+          </svg>
+          <div class="sold-stamp">ITEM SOLD &amp; CLAIMED</div>
+        </div>
+
+        <img class="item-icon" src="${item.icon}" alt="${item.name}">
+        <div class="item-title">${item.name}</div>
+        <div class="price-line">Base: ${(item.basePrice >= 1e6 ? (item.basePrice/1e6).toFixed(1) + 'M' : (item.basePrice/1e3).toFixed(0) + 'k')} gp</div>
+        <div class="bazaar-price">Bazaar: ${(bonusPrice >= 1e6 ? (bonusPrice/1e6).toFixed(2) + 'M' : (bonusPrice/1e3).toFixed(0) + 'k')} gp</div>
+        <div class="action-tag">${badgeText}</div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function openSubmitModal(item) {
+    activeItem = item;
+    const bonusPrice = Math.round(item.basePrice * 1.20);
+
+    document.getElementById("mIcon").src = item.icon;
+    document.getElementById("mName").textContent = item.name;
+    document.getElementById("mHowTo").textContent = item.howToGet;
+    document.getElementById("mBase").textContent = item.basePrice.toLocaleString();
+    document.getElementById("mPayout").textContent = bonusPrice.toLocaleString();
+    document.getElementById("statusMsg").textContent = "";
+    document.getElementById("submitForm").reset();
+
+    document.getElementById("submitModal").style.display = "flex";
+  }
+
+  function openHostModal() {
+    const entered = prompt("🔐 Clan Host Authorization:\nEnter password:");
+    if (entered === null) return;
+    if (entered.trim() !== HOST_PASSWORD) {
+      alert("❌ Incorrect password.");
+      return;
+    }
+
+    const hostList = document.getElementById("hostItemsList");
+    const statuses = getItemStatuses();
+    hostList.innerHTML = "";
+
+    weeklyItems.forEach(item => {
+      const status = statuses[item.id] || "available";
+      const row = document.createElement("div");
+      row.className = "host-item-row";
+      row.innerHTML = `
+        <div>
+          <strong>${item.name}</strong><br>
+          <span style="font-size: 0.72rem; color: ${status === 'sold' ? '#ff4444' : (status === 'pending' ? '#ff981f' : '#37bf37')}">
+            Status: ${status.toUpperCase()}
+          </span>
+        </div>
+        <div>
+          ${status !== 'sold' ? `<button class="btn-sm btn-verify" onclick="setItemStatus('${item.id}', 'sold'); openHostModal();">Verify &amp; Mark Sold</button>` : ''}
+          ${status !== 'available' ? `<button class="btn-sm btn-reopen" onclick="setItemStatus('${item.id}', null); openHostModal();">Re-open Slot</button>` : ''}
+        </div>
+      `;
+      hostList.appendChild(row);
+    });
+
+    document.getElementById("hostModal").style.display = "flex";
+  }
+
+  function resetAllItems() {
+    if (confirm("Are you sure you want to reset all item slots for a new week?")) {
+      localStorage.removeItem('bazaar_item_status');
+      renderBazaar();
+      closeModals();
+      alert("✅ All shop items reset!");
+    }
+  }
+
+  function closeModals() {
+    document.getElementById("submitModal").style.display = "none";
+    document.getElementById("hostModal").style.display = "none";
+    activeItem = null;
+  }
+
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModals(); });
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const rsn = document.getElementById("rsn").value.trim();
+    const file = document.getElementById("proof").files[0];
+    const statusMsg = document.getElementById("statusMsg");
+    const submitBtn = document.getElementById("submitBtn");
+
+    if (!file || !activeItem) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      statusMsg.style.color = "#ff4444";
+      statusMsg.textContent = "File too large! Max file size is 8MB.";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    statusMsg.style.color = "#ff981f";
+    statusMsg.textContent = "Sending screenshot to Discord staff...";
+
+    const bonusPrice = Math.round(activeItem.basePrice * 1.20);
+
+    try {
+      const formData = new FormData();
+      const payload = {
+        content: `🏹 **New Bazaar Item Awaiting Verification!**`,
+        embeds: [{
+          title: `Bazaar Claim: ${activeItem.name}`,
+          color: 16750623, // Warm Gold
+          fields: [
+            { name: "RuneScape Name", value: rsn, inline: true },
+            { name: "Payout Owed (+20%)", value: `${bonusPrice.toLocaleString()} gp`, inline: true },
+            { name: "Status", value: "⏳ Pending Staff Verification", inline: true }
+          ],
+          footer: { text: "The Green Bandits Bazaar" },
+          timestamp: new Date().toISOString()
+        }]
+      };
+
+      formData.append("payload_json", JSON.stringify(payload));
+      formData.append("file", file, file.name);
+
+      const res = await fetch(DISCORD_PROXY_URL, { 
+        method: "POST", 
+        body: formData 
+      });
+
+      if (!res.ok) {
+        throw new Error("Worker rejected submission");
+      }
+
+      statusMsg.style.color = "#37bf37";
+      statusMsg.textContent = "Proof submitted! Awaiting clan verification.";
+
+      setItemStatus(activeItem.id, 'pending');
+
+      setTimeout(() => {
+        closeModals();
+        submitBtn.disabled = false;
+      }, 1500);
+
+    } catch (err) {
+      statusMsg.style.color = "#ff4444";
+      statusMsg.textContent = "Submission failed. Check network or Discord settings.";
+      submitBtn.disabled = false;
+    }
+  }
+
+  renderBazaar();
+</script>
+</body>
+</html>
