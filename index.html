@@ -100,9 +100,27 @@
 
   .wanted-banner p {
     color: var(--osrs-yellow);
-    margin: 2px 0 0 0;
+    margin: 2px 0 4px 0;
     font-size: 0.85rem;
     font-weight: bold;
+  }
+
+  /* Weekly Screenshot Codeword Badge */
+  .code-badge {
+    display: inline-block;
+    background: #19130d;
+    border: 1px solid var(--osrs-inner-border);
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    color: #bbb;
+    margin-top: 3px;
+  }
+
+  .code-badge strong {
+    color: #00ff88;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
   }
 
   /* Shop Counter Shelf */
@@ -280,6 +298,16 @@
     font-size: 0.82rem;
   }
 
+  .code-notice {
+    background: rgba(55, 191, 55, 0.1);
+    border: 1px solid #37bf37;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    margin-bottom: 10px;
+    color: #dedede;
+    border-radius: 2px;
+  }
+
   .form-group {
     margin-bottom: 10px;
     display: flex;
@@ -319,10 +347,17 @@
     text-align: center;
   }
 
-  /* Host Dashboard Table */
+  /* Host Dashboard */
+  .host-code-panel {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--osrs-inner-border);
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: 3px;
+  }
   .host-list {
-    margin-top: 10px;
-    max-height: 240px;
+    margin-top: 6px;
+    max-height: 200px;
     overflow-y: auto;
   }
   .host-item-row {
@@ -336,7 +371,7 @@
     font-size: 0.8rem;
   }
   .btn-sm {
-    padding: 3px 7px;
+    padding: 3px 8px;
     font-size: 0.72rem;
     cursor: pointer;
     font-family: inherit;
@@ -366,6 +401,11 @@
   <div class="wanted-banner">
     <h1>GREEN BANDITS BAZAAR</h1>
     <p>WANTED ITEMS! (+20% BONUS PAYOUT)</p>
+    
+    <!-- Live Weekly Password / Codeword Display -->
+    <div class="code-badge">
+      📸 CHAT CODEWORD: <strong id="bannerCodeword">BANDIT</strong>
+    </div>
   </div>
 
   <div class="shop-counter" id="shopGrid">
@@ -386,6 +426,11 @@
         <div><strong>Acquisition:</strong> <span id="mHowTo"></span></div>
         <div style="margin-top: 4px;"><strong>Base Price:</strong> <span id="mBase"></span> gp</div>
         <div><strong>Bazaar Payout:</strong> <span id="mPayout" style="color: var(--osrs-green); font-weight: bold;"></span> gp</div>
+      </div>
+
+      <!-- Screenshot Proof Requirement Notice -->
+      <div class="code-notice">
+        ⚠️ <strong>Verification Notice:</strong> You must have the weekly codeword <strong id="modalCodeword" style="color: #00ff88;">BANDIT</strong> clearly typed in your in-game chat box in your screenshot proof.
       </div>
 
       <form id="submitForm" onsubmit="handleSubmit(event)">
@@ -410,8 +455,18 @@
     <div class="modal-box">
       <button class="close-btn" onclick="closeModals()">&times;</button>
       <h3 style="color: var(--osrs-yellow); margin-top: 0; text-align: center;">Clan Host Dashboard</h3>
-      <div style="font-size: 0.78rem; color: #aaa; text-align: center; margin-bottom: 8px;">
-        Review screenshots in Discord, then verify claims below:
+
+      <!-- Edit Weekly Codeword Section -->
+      <div class="host-code-panel">
+        <label for="newCodewordInput" style="display:block; margin-bottom: 5px;">Set Weekly Screenshot Codeword:</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="newCodewordInput" placeholder="e.g., BANDIT-RUNE" style="flex: 1;">
+          <button type="button" class="btn-sm btn-verify" onclick="saveNewCodeword()">Save Codeword</button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.78rem; color: #aaa; text-align: center; margin-bottom: 6px;">
+        Review submissions in Discord, then verify claims below:
       </div>
 
       <div class="host-list" id="hostItemsList">
@@ -460,6 +515,15 @@
 
   let activeItem = null;
   let globalStatuses = {};
+  let currentWeeklyCodeword = "BANDIT";
+
+  function updateCodewordUI(word) {
+    if (!word) return;
+    currentWeeklyCodeword = word;
+    document.getElementById("bannerCodeword").textContent = word;
+    const modalCodeword = document.getElementById("modalCodeword");
+    if (modalCodeword) modalCodeword.textContent = word;
+  }
 
   function renderBazaar() {
     const grid = document.getElementById("shopGrid");
@@ -514,6 +578,10 @@
       const res = await fetch(`${DISCORD_PROXY_URL}/api/status`);
       if (res.ok) {
         globalStatuses = await res.json();
+        // Check if a weekly codeword is stored in KV
+        if (globalStatuses._weeklyCodeword) {
+          updateCodewordUI(globalStatuses._weeklyCodeword);
+        }
       }
     } catch (e) {
       console.warn("Could not load global status from server.");
@@ -539,6 +607,18 @@
     }
   }
 
+  async function saveNewCodeword() {
+    const input = document.getElementById("newCodewordInput");
+    const val = input.value.trim().toUpperCase();
+    if (!val) {
+      alert("Please type a valid codeword.");
+      return;
+    }
+    await syncStatusUpdate("_weeklyCodeword", val);
+    input.value = "";
+    alert(`✅ Weekly Screenshot Codeword set to: ${val}`);
+  }
+
   function openSubmitModal(item) {
     activeItem = item;
     const bonusPrice = Math.round(item.basePrice * 1.20);
@@ -548,6 +628,7 @@
     document.getElementById("mHowTo").textContent = item.howToGet;
     document.getElementById("mBase").textContent = item.basePrice.toLocaleString();
     document.getElementById("mPayout").textContent = bonusPrice.toLocaleString();
+    document.getElementById("modalCodeword").textContent = currentWeeklyCodeword;
     document.getElementById("statusMsg").textContent = "";
     document.getElementById("submitForm").reset();
 
@@ -561,6 +642,8 @@
       alert("❌ Incorrect password.");
       return;
     }
+
+    document.getElementById("newCodewordInput").value = currentWeeklyCodeword;
 
     const hostList = document.getElementById("hostItemsList");
     hostList.innerHTML = "";
@@ -588,10 +671,13 @@
   }
 
   async function resetAllItems() {
-    if (confirm("Are you sure you want to reset all item slots for a new week?")) {
+    if (confirm("Reset all items for a new week?")) {
+      const savedCodeword = currentWeeklyCodeword;
       await syncStatusUpdate(null, null, true);
+      // Re-save the codeword so it persists after full reset
+      await syncStatusUpdate("_weeklyCodeword", savedCodeword);
       closeModals();
-      alert("✅ All shop items reset for everyone!");
+      alert("✅ All shop items reset for the new week!");
     }
   }
 
@@ -634,6 +720,7 @@
           fields: [
             { name: "RuneScape Name", value: rsn, inline: true },
             { name: "Payout Owed (+20%)", value: `${bonusPrice.toLocaleString()} gp`, inline: true },
+            { name: "Required Codeword", value: `\`${currentWeeklyCodeword}\``, inline: true },
             { name: "Status", value: "⏳ Pending Staff Verification", inline: true }
           ],
           footer: { text: "The Green Bandits Bazaar" },
@@ -673,7 +760,7 @@
   renderBazaar();
   loadGlobalStatus();
 
-  // Auto-refresh the board every 15 seconds for anyone who has the tab open
+  // Auto-refresh the board every 15 seconds
   setInterval(loadGlobalStatus, 15000);
 </script>
 </body>
